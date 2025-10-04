@@ -3,54 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <title>Signup & Login</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background: #f4f4f4;
-      }
-      .container {
-        width: 350px;
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-      }
-      form {
-        display: none;
-        flex-direction: column;
-        gap: 10px;
-      }
-      form.active {
-        display: flex;
-      }
-      input {
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-      }
-      button {
-        padding: 10px;
-        background: #4caf50;
-        border: none;
-        border-radius: 5px;
-        color: white;
-        cursor: pointer;
-      }
-      button:hover {
-        background: #45a049;
-      }
-      .toggle {
-        margin-top: 10px;
-        text-align: center;
-        color: blue;
-        cursor: pointer;
-        text-decoration: underline;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="container">
@@ -84,65 +37,6 @@
       <div class="toggle" id="toggleForm">Already registered? Login</div>
     </div>
 
-    <script>
-      const signupForm = document.getElementById("signupForm");
-      const loginForm = document.getElementById("loginForm");
-      const toggleForm = document.getElementById("toggleForm");
-      const formTitle = document.getElementById("formTitle");
-
-      // Toggle forms
-      toggleForm.addEventListener("click", () => {
-        if (signupForm.classList.contains("active")) {
-          signupForm.classList.remove("active");
-          loginForm.classList.add("active");
-          formTitle.textContent = "Login";
-          toggleForm.textContent = "Don’t have an account? Sign Up";
-        } else {
-          loginForm.classList.remove("active");
-          signupForm.classList.add("active");
-          formTitle.textContent = "Sign Up";
-          toggleForm.textContent = "Already registered? Login";
-        }
-      });
-
-      // Signup Submit
-      signupForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const name = document.getElementById("signupName").value.trim();
-        const email = document.getElementById("signupEmail").value.trim();
-        const password = document.getElementById("signupPassword").value.trim();
-
-        try {
-          const res = await fetch("http://localhost:5000/user/signup", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, password }),
-          });
-          const data = await res.json();
-          alert(data.message);
-        } catch (err) {
-          alert("Failed to connect to server");
-        }
-      });
-
-      // Login Submit
-      loginForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const email = document.getElementById("loginEmail").value.trim();
-        const password = document.getElementById("loginPassword").value.trim();
-
-        try {
-          const res = await fetch("http://localhost:5000/user/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-          });
-          const data = await res.json();
-          alert(data.message);
-        } catch (err) {
-          alert("Failed to connect to server");
-        }
-      });
-    </script>
+    <script src="script.js"></script>
   </body>
 </html>

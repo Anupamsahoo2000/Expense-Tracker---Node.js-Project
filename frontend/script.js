@@ -1,48 +1,43 @@
-const form = document.getElementById("signupForm");
+const signupForm = document.getElementById("signupForm");
+const loginForm = document.getElementById("loginForm");
+const toggleForm = document.getElementById("toggleForm");
+const formTitle = document.getElementById("formTitle");
 
-form.addEventListener("submit", async (e) => {
+// Toggle forms
+toggleForm.addEventListener("click", () => {
+  if (signupForm.classList.contains("active")) {
+    signupForm.classList.remove("active");
+    loginForm.classList.add("active");
+    formTitle.textContent = "Login";
+    toggleForm.textContent = "Don’t have an account? Sign Up";
+  } else {
+    loginForm.classList.remove("active");
+    signupForm.classList.add("active");
+    formTitle.textContent = "Sign Up";
+    toggleForm.textContent = "Already registered? Login";
+  }
+});
+
+// Signup Submit
+signupForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+  const name = document.getElementById("signupName").value.trim();
+  const email = document.getElementById("signupEmail").value.trim();
+  const password = document.getElementById("signupPassword").value.trim();
 
-  // Clear old errors
-  document.getElementById("nameError").innerText = "";
-  document.getElementById("emailError").innerText = "";
-  document.getElementById("passwordError").innerText = "";
-
-  // Get values
-  const name = document.getElementById("name").value.trim();
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  let hasError = false;
-
-  if (!name) {
-    document.getElementById("nameError").innerText = "Name is required";
-    hasError = true;
-  }
-  if (!email) {
-    document.getElementById("emailError").innerText = "Email is required";
-    hasError = true;
-  }
-  if (!password) {
-    document.getElementById("passwordError").innerText = "Password is required";
-    hasError = true;
-  }
-
-  if (hasError) return;
-
-  // Send data to backend
   try {
-    const response = await fetch("http://localhost:5000/user/signup", {
+    const res = await fetch("http://localhost:5000/user/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, password }),
     });
+    const data = await res.json();
+    alert(data.message);
 
-    if (response.ok) {
-      alert("Signup successful!");
-      form.reset();
+    if (res.ok) {
+      signupForm.reset();
     } else {
-      const data = await response.json();
+      const data = await res.json();
       alert("Error: " + (data.message || "Something went wrong"));
     }
   } catch (err) {
@@ -50,27 +45,26 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-const form1 = document.getElementById("loginForm");
-
-form1.addEventListener("submit", async (e) => {
+// Login Submit
+loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
 
   try {
-    const response = await fetch("http://localhost:5000/user/login", {
+    const res = await fetch("http://localhost:5000/user/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
+    const data = await res.json();
+    alert(data.message);
 
-    const data = await response.json();
-
-    if (response.ok) {
-      alert(data.message); // Login successful
+    if (res.ok) {
+      loginForm.reset();
     } else {
-      alert("Error: " + data.message); // Show error message
+      const data = await res.json();
+      alert("Error: " + (data.message || "Something went wrong"));
     }
   } catch (err) {
     alert("Failed to connect to server");

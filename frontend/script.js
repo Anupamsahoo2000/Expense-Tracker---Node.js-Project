@@ -49,3 +49,30 @@ form.addEventListener("submit", async (e) => {
     alert("Failed to connect to server");
   }
 });
+
+const form1 = document.getElementById("loginForm");
+
+form1.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  try {
+    const response = await fetch("http://localhost:5000/user/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert(data.message); // Login successful
+    } else {
+      alert("Error: " + data.message); // Show error message
+    }
+  } catch (err) {
+    alert("Failed to connect to server");
+  }
+});

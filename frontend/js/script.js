@@ -37,7 +37,6 @@ signupForm.addEventListener("submit", async (e) => {
     if (res.ok) {
       signupForm.reset();
     } else {
-      const data = await res.json();
       alert("Error: " + (data.message || "Something went wrong"));
     }
   } catch (err) {
@@ -48,6 +47,7 @@ signupForm.addEventListener("submit", async (e) => {
 // Login Submit
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPassword").value.trim();
 
@@ -57,16 +57,25 @@ loginForm.addEventListener("submit", async (e) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    const data = await res.json();
-    alert(data.message);
 
-    if (res.ok) {
-      loginForm.reset();
+    const data = await res.json();
+    console.log("Login response:", data); // 🔍 debug log
+
+    if (!res.ok) {
+      alert(data.message || "Login failed!");
+      return;
+    }
+
+    // ✅ Only redirect if success = true
+    if (data.success) {
+      localStorage.setItem("userId", data.userId);
+      alert("Login successful! Redirecting...");
+      window.location.href = "./expense.html"; // redirect
     } else {
-      const data = await res.json();
-      alert("Error: " + (data.message || "Something went wrong"));
+      alert(data.message || "Login failed!");
     }
   } catch (err) {
+    console.error("Error:", err);
     alert("Failed to connect to server");
   }
 });

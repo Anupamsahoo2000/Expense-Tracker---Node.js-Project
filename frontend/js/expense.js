@@ -1,65 +1,105 @@
-const userId = localStorage.getItem("userId");
-if (!userId) {
+// frontend/js/expense.js
+const token = localStorage.getItem("token");
+if (!token) {
   alert("Please login first!");
-  window.location.href = "index.html";
+  window.location.href = "./index.html";
 }
 
-async function loadExpenses() {
-  const res = await fetch(
-    `http://localhost:5000/expense/get-expenses?userId=${userId}`
-  );
-  const data = await res.json();
-
-  const list = document.getElementById("expense-list");
-  list.innerHTML = "";
-  data.expenses.forEach((exp) => {
-    const li = document.createElement("li");
-    li.textContent = `${exp.description} - ₹${exp.amount} (${exp.category})`;
-
-    const delBtn = document.createElement("button");
-    delBtn.textContent = "Delete";
-    delBtn.classList.add("delete-btn");
-    delBtn.onclick = () => deleteExpense(exp.id);
-
-    li.appendChild(delBtn);
-    list.appendChild(li);
-  });
-}
-
+// Handle form submission
 document
   .getElementById("expense-form")
   .addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const amount = document.getElementById("amount").value;
-    const description = document.getElementById("description").value;
+    const amount = document.getElementById("amount").value.trim();
+    const description = document.getElementById("description").value.trim();
     const category = document.getElementById("category").value;
 
-    const res = await fetch("http://localhost:5000/expense/add-expense", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount, description, category, userId }),
-    });
+    if (!amount || !description || !category) {
+      alert("All fields are required!");
+      return;
+    }
 
-    const data = await res.json();
-    if (data.success) {
-      loadExpenses();
-      document.getElementById("expense-form").reset();
+    try {
+      const res = await fetch("http://localhost:5000/expense/add-expense", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ amount, description, category }),
+      });
+
+      const data = await res.json();
+      console.log("Add expense response:", data);
+
+      if (res.ok && data.success) {
+        document.getElementById("expense-form").reset();
+        loadExpenses(); // refresh list
+      } else {
+        alert(data.message || "Failed to add expense!");
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          window.location.href = "./index.html";
+        }
+      }
+    } catch (err) {
+      console.error("Error adding expense:", err);
+      alert("Failed to connect to server");
     }
   });
 
+// Load existing expenses
+async function loadExpenses() {
+  try {
+    const res = await fetch("http://localhost:5000/expense/get-expenses", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = await res.json();
+    console.log("Loaded expenses:", data);
+
+    if (res.ok && data.success) {
+      const list = document.getElementById("expense-list");
+      list.innerHTML = "";
+      data.expenses.forEach((exp) => {
+        const li = document.createElement("li");
+        li.textContent = `${exp.description} - ₹${exp.amount} (${exp.category})`;
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "Delete";
+        delBtn.classList.add("delete-btn");
+        delBtn.onclick = () => deleteExpense(exp.id);
+        li.appendChild(delBtn);
+
+        list.appendChild(li);
+      });
+    } else {
+      console.warn("Failed to load expenses:", data.message);
+    }
+  } catch (err) {
+    console.error("Error loading expenses:", err);
+  }
+}
+
+// Delete expense
 async function deleteExpense(id) {
   const res = await fetch(
     `http://localhost:5000/expense/delete-expense/${id}`,
     {
       method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
     }
   );
-
   const data = await res.json();
-  if (data.success) {
+  if (res.ok && data.success) {
     loadExpenses();
+  } else {
+    alert(data.message || "Failed to delete expense");
   }
 }
 
-loadExpenses();
+// Load expenses on page load
+document.addEventListener("DOMContentLoaded", loadExpenses);

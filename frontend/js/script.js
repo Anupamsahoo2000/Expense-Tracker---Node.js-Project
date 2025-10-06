@@ -68,8 +68,9 @@ loginForm.addEventListener("submit", async (e) => {
 
     // ✅ Only redirect if success = true
     if (data.success) {
-      localStorage.setItem("userId", data.userId);
-      alert("Login successful! Redirecting...");
+      localStorage.setItem("token",data.token);
+      //localStorage.setItem("userId", data.userId);
+      // alert("Login successful! Redirecting...");
       window.location.href = "./expense.html"; // redirect
     } else {
       alert(data.message || "Login failed!");

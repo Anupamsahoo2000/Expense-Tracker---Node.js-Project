@@ -2,12 +2,13 @@ const Expense = require("../models/expenseModel");
 
 const addExpense = async (req, res) => {
   try {
-    const { amount, description, category, userId } = req.body;
+    const { amount, description, category } = req.body;
+    const userId = req.user.id; // set by auth middleware
 
-    if (!userId) {
+    if (!amount || !description || !category) {
       return res
         .status(400)
-        .json({ success: false, message: "User ID required" });
+        .json({ success: false, message: "All fields are required" });
     }
 
     const newExpense = await Expense.create({
@@ -26,26 +27,37 @@ const addExpense = async (req, res) => {
 
 const getExpenses = async (req, res) => {
   try {
-    const { userId } = req.query;
-
-    const expenses = await Expense.findAll({ where: { UserId: userId } });
+    const userId = req.user.id;
+    const expenses = await Expense.findAll({
+      where: { UserId: userId },
+      order: [["createdAt", "DESC"]],
+    });
     res.status(200).json({ success: true, expenses });
   } catch (err) {
     console.error("Error fetching expenses:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 const deleteExpense = async (req, res) => {
   try {
+    const userId = req.user.id;
     const expenseId = req.params.id;
-    const deleted = await Expense.destroy({ where: { id: expenseId } });
 
-    if (!deleted) {
+    // ensure the expense belongs to the user before deleting
+    const expense = await Expense.findOne({
+      where: { id: expenseId, UserId: userId },
+    });
+    if (!expense) {
       return res
         .status(404)
-        .json({ success: false, message: "Expense not found" });
+        .json({
+          success: false,
+          message: "Expense not found or not owned by user",
+        });
     }
 
+    await Expense.destroy({ where: { id: expenseId, UserId: userId } });
     res
       .status(200)
       .json({ success: true, message: "Expense deleted successfully" });

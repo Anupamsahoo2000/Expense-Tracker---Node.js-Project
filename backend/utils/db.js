@@ -9,7 +9,7 @@ const sequelize = new Sequelize("expense", "root", "2505", {
   try {
     await sequelize.authenticate();
     console.log("Connection has been established successfully.");
-    sequelize.sync({ alter: true });
+    sequelize.sync();
   } catch (error) {
     console.error("Unable to connect to the database:", error);
   }

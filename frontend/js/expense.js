@@ -1,4 +1,3 @@
-// frontend/js/expense.js
 const token = localStorage.getItem("token");
 if (!token) {
   alert("Please login first!");
@@ -100,6 +99,36 @@ async function deleteExpense(id) {
     alert(data.message || "Failed to delete expense");
   }
 }
-
 // Load expenses on page load
 document.addEventListener("DOMContentLoaded", loadExpenses);
+
+const payBtn = document.getElementById("pay-btn");
+
+payBtn.addEventListener("click", async () => {
+  const amount = 100; // testing amount
+
+  try {
+    const res = await fetch("http://localhost:5000/payment/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount }),
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert(data.message || "Failed to create payment order");
+      return;
+    }
+
+    const cashfree = Cashfree({ mode: "sandbox" });
+
+    cashfree.checkout({
+      paymentSessionId: data.payment_session_id,
+      redirectTarget: "_self",
+    });
+  } catch (err) {
+    console.error(err);
+    alert("Error initiating payment");
+  }
+});

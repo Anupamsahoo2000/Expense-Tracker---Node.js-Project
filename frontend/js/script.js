@@ -59,19 +59,15 @@ loginForm.addEventListener("submit", async (e) => {
     });
 
     const data = await res.json();
-    console.log("Login response:", data); // 🔍 debug log
+    console.log("Login response:", data);
 
-    if (!res.ok) {
-      alert(data.message || "Login failed!");
-      return;
-    }
-
-    // ✅ Only redirect if success = true
     if (data.success) {
-      localStorage.setItem("token",data.token);
-      //localStorage.setItem("userId", data.userId);
-      // alert("Login successful! Redirecting...");
-      window.location.href = "./expense.html"; // redirect
+      // ✅ store both userId and JWT token
+      localStorage.setItem("userId", data.userId);
+      localStorage.setItem("token", data.token);
+
+      // redirect AFTER storage
+      window.location.href = "./expense.html";
     } else {
       alert(data.message || "Login failed!");
     }

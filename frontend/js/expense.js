@@ -105,13 +105,24 @@ document.addEventListener("DOMContentLoaded", loadExpenses);
 const payBtn = document.getElementById("pay-btn");
 
 payBtn.addEventListener("click", async () => {
-  const amount = 100; // testing amount
+  const userId = localStorage.getItem("userId"); // fetch stored userId
+  const amount = 100; // hardcoded amount for premium upgrade
+
+  console.log("Pay button clicked", { userId, amount });
+
+  if (!userId) {
+    alert("Please login first!");
+    return;
+  }
 
   try {
     const res = await fetch("http://localhost:5000/payment/create-order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount }),
+      body: JSON.stringify({
+        amount,
+        userId: Number(userId), // convert to number
+      }),
     });
 
     const data = await res.json();
@@ -121,14 +132,49 @@ payBtn.addEventListener("click", async () => {
       return;
     }
 
+    // Initialize Cashfree checkout
     const cashfree = Cashfree({ mode: "sandbox" });
 
-    cashfree.checkout({
+    const checkoutOptions = {
       paymentSessionId: data.payment_session_id,
       redirectTarget: "_self",
-    });
+    };
+
+    cashfree.checkout(checkoutOptions);
   } catch (err) {
     console.error(err);
     alert("Error initiating payment");
   }
 });
+
+//for testing
+// const payBtn = document.getElementById("pay-btn");
+
+// payBtn.addEventListener("click", async () => {
+//   const amount = 100; // testing amount
+
+//   try {
+//     const res = await fetch("http://localhost:5000/payment/create-order", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ amount }),
+//     });
+
+//     const data = await res.json();
+
+//     if (!data.success) {
+//       alert(data.message || "Failed to create payment order");
+//       return;
+//     }
+
+//     const cashfree = Cashfree({ mode: "sandbox" });
+
+//     cashfree.checkout({
+//       paymentSessionId: data.payment_session_id,
+//       redirectTarget: "_self",
+//     });
+//   } catch (err) {
+//     console.error(err);
+//     alert("Error initiating payment");
+//   }
+// });

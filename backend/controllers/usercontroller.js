@@ -1,5 +1,6 @@
 const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
+const { response } = require("express");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
@@ -27,7 +28,7 @@ const signup = async (req, res) => {
     });
     return res.status(201).json({
       message: "User created successfully",
-      userId: newUser.id,
+      response:newUser
     });
   } catch (error) {
     console.error(error);

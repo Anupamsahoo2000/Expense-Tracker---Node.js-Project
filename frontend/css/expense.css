@@ -14,16 +14,57 @@ body {
   align-items: center;
   color: #333;
 }
+/* Top bar */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  width: 100%;
+  padding: 15px 20px;
+  background-color: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #ddd;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* Button common style */
+.btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s ease;
+}
+
+/* Logout button */
+.logout-btn {
+  background-color: #ff4d4d;
+  color: white;
+}
+.logout-btn:hover {
+  background-color: #e63946;
+}
+
+/* Premium button */
+.premium-btn {
+  background-color: #4caf50;
+  color: white;
+}
+.premium-btn:hover {
+  background-color: #45a049;
+}
 
 /* ===== Header ===== */
-header {
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(10px);
-  width: 100%;
-  padding: 20px 0;
-  text-align: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
 
 header h1 {
   font-size: 2rem;

@@ -49,12 +49,10 @@ const deleteExpense = async (req, res) => {
       where: { id: expenseId, UserId: userId },
     });
     if (!expense) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          message: "Expense not found or not owned by user",
-        });
+      return res.status(404).json({
+        success: false,
+        message: "Expense not found or not owned by user",
+      });
     }
 
     await Expense.destroy({ where: { id: expenseId, UserId: userId } });

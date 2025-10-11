@@ -102,13 +102,13 @@ async function deleteExpense(id) {
 // Load expenses on page load
 document.addEventListener("DOMContentLoaded", loadExpenses);
 
-const payBtn = document.getElementById("pay-btn");
+const premiumBtn = document.getElementById("premium-btn");
 
-payBtn.addEventListener("click", async () => {
+premiumBtn.addEventListener("click", async () => {
   const userId = localStorage.getItem("userId"); // fetch stored userId
   const amount = 100; // hardcoded amount for premium upgrade
 
-  console.log("Pay button clicked", { userId, amount });
+  console.log("Premium button clicked", { userId, amount });
 
   if (!userId) {
     alert("Please login first!");
@@ -140,7 +140,33 @@ payBtn.addEventListener("click", async () => {
       redirectTarget: "_self",
     };
 
-    cashfree.checkout(checkoutOptions);
+    const result = await cashfree.checkout(checkoutOptions);
+
+    console.log("Payment result:", result);
+
+    // ✅ Handle success/failure
+    const orderId = data.order_id;
+
+    let orderStatus = "PENDING";
+    while (orderStatus === "PENDING") {
+      await new Promise((r) => setTimeout(r, 3000)); // wait 3 seconds
+
+      const statusRes = await fetch(
+        `http://localhost:5000/payment/order-status/${orderId}`
+      );
+      const statusData = await statusRes.json();
+
+      orderStatus = statusData.status;
+
+      if (orderStatus === "SUCCESS") {
+        alert("Transaction successful! You are now a premium user.");
+        // Optionally update UI to show premium features
+        break;
+      } else if (orderStatus === "FAILED") {
+        alert("TRANSACTION FAILED");
+        break;
+      }
+    }
   } catch (err) {
     console.error(err);
     alert("Error initiating payment");
@@ -148,9 +174,9 @@ payBtn.addEventListener("click", async () => {
 });
 
 //for testing
-// const payBtn = document.getElementById("pay-btn");
+// const premiumBtn = document.getElementById("premium-btn");
 
-// payBtn.addEventListener("click", async () => {
+// premiumBtn.addEventListener("click", async () => {
 //   const amount = 100; // testing amount
 
 //   try {

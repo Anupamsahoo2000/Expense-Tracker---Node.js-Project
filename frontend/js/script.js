@@ -65,6 +65,7 @@ loginForm.addEventListener("submit", async (e) => {
       // ✅ store both userId and JWT token
       localStorage.setItem("userId", data.userId);
       localStorage.setItem("token", data.token);
+      localStorage.setItem("isPremium", data.userId.isPremium); // IMPORTANT: store actual premium status
 
       // redirect AFTER storage
       window.location.href = "./expense.html";

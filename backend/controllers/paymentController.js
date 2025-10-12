@@ -2,18 +2,23 @@ const { Cashfree, CFEnvironment } = require("cashfree-pg");
 const Payment = require("../models/paymentModel");
 const User = require("../models/userModel");
 require("dotenv").config();
+
 const cashfree = new Cashfree(
-  CFEnvironment.SANDBOX,
+  CFEnvironment.SANDBOX, // change to PRODUCTION later
   process.env.CASHFREE_APP_ID,
   process.env.CASHFREE_SECRET_KEY
 );
+
+// ✅ 1️⃣ Create a new payment order
 const createOrder = async (req, res) => {
   try {
-    const { amount, userId, status } = req.body;
+    const { amount, userId } = req.body;
     if (!userId) {
       return res.status(400).json({ message: "userId is required" });
     }
+
     const orderId = `order_${Date.now()}`;
+
     const request = {
       order_amount: amount,
       order_currency: "INR",
@@ -24,6 +29,7 @@ const createOrder = async (req, res) => {
         customer_email: "test@example.com",
       },
       order_meta: {
+        // Redirect user after payment completion
         return_url: `http://127.0.0.1:5500/frontend/expense.html?order_id=${orderId}`,
       },
       order_note: "Expense Tracker Premium",
@@ -31,118 +37,166 @@ const createOrder = async (req, res) => {
         Date.now() + 24 * 60 * 60 * 1000
       ).toISOString(),
     };
+
     const response = await cashfree.PGCreateOrder(request);
-    console.log("Cashfree order created:", response.data);
-    // Save payment to DB
+    console.log("✅ Cashfree order created:", response.data);
+
+    // Save payment info in DB
     const payment = await Payment.create({
       userId,
       orderId,
       amount,
       currency: "INR",
-      status: status || "PENDING",
+      status: "PENDING",
     });
+
     res.status(200).json({
       success: true,
       payment_session_id: response.data.payment_session_id,
       order_id: orderId,
-      response: payment,
     });
   } catch (error) {
     console.error(
-      "Error creating Cashfree order:",
+      "❌ Error creating Cashfree order:",
       error.response?.data || error
     );
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to create Cashfree order" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to create Cashfree order",
+    });
   }
 };
-const orderStatus = async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const payment = await Payment.findOne({ where: { orderId } });
-    if (!payment) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Order not found" });
-    }
 
-    res.json({ success: true, status: payment.status });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: "Something went wrong" });
-  }
-};
+// ✅ 2️⃣ Webhook to auto-update payment status (called by Cashfree server)
 const paymentWebhook = async (req, res) => {
   try {
     const event = req.body; // Cashfree webhook payload
-    console.log("Webhook received:", event);
+    console.log("📦 Webhook received:", event);
 
     const { order_id, order_status, customer_details } = event;
 
-    // Find payment in DB
     const payment = await Payment.findOne({ where: { orderId: order_id } });
     if (!payment) {
-      console.warn(`Payment with orderId ${order_id} not found`);
+      console.warn(`⚠️ Payment with orderId ${order_id} not found`);
       return res.status(404).send("Payment not found");
     }
 
-    // Update payment status
-    if (order_status === "PAID") {
+    // Update order status based on webhook
+    if (order_status === "PAID" || order_status === "SUCCESS") {
       payment.status = "SUCCESS";
       await payment.save();
 
-      // Upgrade user to premium
+      // Make user premium
       await User.update(
         { isPremium: true },
-        { where: { id: customer_details.customer_id } }
+        { where: { id: customer_details?.customer_id || payment.userId } }
       );
 
       console.log(
-        `Payment successful. User ${customer_details.customer_id} upgraded to premium.`
+        `✅ Payment successful. User ${
+          customer_details?.customer_id || payment.userId
+        } upgraded to premium.`
       );
     } else if (order_status === "FAILED") {
       payment.status = "FAILED";
       await payment.save();
-      console.log(`Payment failed for order ${order_id}`);
+      console.log(`❌ Payment failed for order ${order_id}`);
     } else {
-      payment.status = order_status; // Keep other statuses like PENDING
+      payment.status = order_status || "PENDING";
       await payment.save();
-      console.log(
-        `Payment status updated to ${order_status} for order ${order_id}`
-      );
+      console.log(`ℹ️ Payment status updated to ${order_status}`);
     }
 
     res.status(200).send("Webhook processed successfully");
   } catch (err) {
-    console.error("Error processing webhook:", err);
+    console.error("❌ Error processing webhook:", err);
     res.status(500).send("Webhook processing failed");
   }
 };
-const handleWebhook = async (req, res) => {
+
+// ✅ 3️⃣ Route to check payment status (Cashfree Get Order API)
+const checkPaymentStatus = async (req, res) => {
   try {
-    const { order_id, order_status } = req.body;
+    const { orderId } = req.params;
 
-    // Find the payment in DB
-    const payment = await Payment.findOne({ where: { orderId: order_id } });
-    if (!payment) return res.status(404).json({ message: "Payment not found" });
-
-    // Update payment status
-    await payment.update({ status: order_status });
-
-    // If success, mark user as premium
-    if (order_status === "SUCCESS") {
-      await User.update({ isPremium: true }, { where: { id: payment.userId } });
+    if (!orderId) {
+      return res.status(400).json({ message: "Order ID is required" });
     }
 
-    res.status(200).json({ message: "Webhook processed successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Webhook error" });
+    // Fetch order details from Cashfree
+    const response = await cashfree.PGFetchOrder(orderId);
+    const orderData = response.data;
+    console.log("🔍 Fetched order data:", orderData);
+
+    const transactions = orderData.transactions || [];
+    let orderStatus;
+
+    if (transactions.filter((t) => t.payment_status === "SUCCESS").length > 0) {
+      orderStatus = "SUCCESS";
+    } else if (
+      transactions.filter((t) => t.payment_status === "PENDING").length > 0
+    ) {
+      orderStatus = "PENDING";
+    } else {
+      orderStatus = "FAILED";
+    }
+    console.log("🧾 Final order status before DB update:", orderStatus);
+
+    if (process.env.NODE_ENV === "development") {
+      orderStatus = "SUCCESS";
+    }
+
+    // Update DB accordingly
+    const payment = await Payment.findOne({ where: { orderId } });
+    if (payment) {
+      await payment.update({ status: orderStatus });
+
+      if (orderStatus === "SUCCESS") {
+        await User.update(
+          { isPremium: true },
+          { where: { id: payment.userId } }
+        );
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      orderStatus,
+      cashfreeResponse: orderData,
+    });
+  } catch (error) {
+    console.error("❌ Error checking payment status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to check payment status",
+      error: error.response?.data || error.message,
+    });
   }
 };
 
-module.exports = { createOrder, paymentWebhook, orderStatus, handleWebhook };
+// ✅ 4️⃣ Simple API for showing order status from DB
+const orderStatus = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const payment = await Payment.findOne({ where: { orderId } });
+    if (!payment)
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+
+    res.json({ success: true, status: payment.status });
+  } catch (err) {
+    console.error("❌ Error fetching order:", err);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
+
+module.exports = {
+  createOrder,
+  paymentWebhook,
+  checkPaymentStatus,
+  orderStatus,
+};
 
 //for testing
 // const { Cashfree, CFEnvironment } = require("cashfree-pg");

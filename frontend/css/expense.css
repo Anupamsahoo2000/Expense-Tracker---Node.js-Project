@@ -14,7 +14,11 @@ body {
   align-items: center;
   color: #333;
 }
+
 /* Top bar */
+a {
+  text-decoration: none;
+}
 .top-bar {
   display: flex;
   justify-content: space-between;
@@ -170,6 +174,46 @@ header h1 {
 
 .delete-btn:hover {
   background: #e63946;
+}
+#leaderboard-container {
+  display: none;
+  margin-top: 20px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  max-width: 400px;
+}
+#leaderboard-list li {
+  padding: 5px 0;
+  font-size: 16px;
+}
+#leaderboard-list li.current-user {
+  font-weight: bold;
+  color: green;
+}
+#leaderboard-btn {
+  display: none; /* hidden by default */
+  background: linear-gradient(135deg, #007bff, #00c6ff);
+  color: white;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+}
+
+#leaderboard-btn:hover {
+  background: linear-gradient(135deg, #0056b3, #0096ff);
+  transform: scale(1.05);
+  box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4);
+}
+
+#leaderboard-btn:active {
+  transform: scale(0.98);
 }
 
 /* ===== Responsive ===== */

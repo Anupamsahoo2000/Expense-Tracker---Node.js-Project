@@ -9,7 +9,9 @@
 
   <body>
     <header class="top-bar">
-      <h1>Expense Tracker</h1>
+      <a href="./index.html">
+        <h1>Expense Tracker</h1>
+      </a>
       <div class="header-buttons">
         <button id="premium-btn" class="btn premium-btn">
           Upgrade to Premium
@@ -51,6 +53,13 @@
         <div class="expense-list">
           <h3>Your Expenses</h3>
           <ul id="expense-list"></ul>
+        </div>
+        <button id="leaderboard-btn" style="display: none">
+          Show Leaderboard
+        </button>
+        <div id="leaderboard-container" style="display: none">
+          <h3>Leaderboard</h3>
+          <ul id="leaderboard-list"></ul>
         </div>
       </section>
     </main>

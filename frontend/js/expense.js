@@ -1,4 +1,5 @@
 const token = localStorage.getItem("token");
+const userId = localStorage.getItem("userId");
 if (!token) {
   alert("Please login first!");
   window.location.href = "./index.html";
@@ -102,10 +103,10 @@ async function deleteExpense(id) {
 // Load expenses on page load
 document.addEventListener("DOMContentLoaded", loadExpenses);
 
+//Cashfree Payment Integration
 const premiumBtn = document.getElementById("premium-btn");
-
 premiumBtn.addEventListener("click", async () => {
-  const userId = localStorage.getItem("userId"); // fetch stored userId
+  //const userId = localStorage.getItem("userId"); // fetch stored userId
   const amount = 100; // hardcoded amount for premium upgrade
 
   console.log("Premium button clicked", { userId, amount });
@@ -133,6 +134,8 @@ premiumBtn.addEventListener("click", async () => {
     }
 
     // Initialize Cashfree checkout
+    const orderId = data.order_id;
+
     const cashfree = Cashfree({ mode: "sandbox" });
 
     const checkoutOptions = {
@@ -144,63 +147,137 @@ premiumBtn.addEventListener("click", async () => {
 
     console.log("Payment result:", result);
 
-    // ✅ Handle success/failure
-    const orderId = data.order_id;
+    // ✅ After checkout, check order status directly from backend (Cashfree API)
+    let finalStatus = "PENDING";
 
-    let orderStatus = "PENDING";
-    while (orderStatus === "PENDING") {
-      await new Promise((r) => setTimeout(r, 3000)); // wait 3 seconds
+    while (finalStatus === "PENDING") {
+      await new Promise((r) => setTimeout(r, 3000)); // Wait 3s between checks
 
       const statusRes = await fetch(
-        `http://localhost:5000/payment/order-status/${orderId}`
+        `http://localhost:5000/payment/status/${orderId}`
       );
       const statusData = await statusRes.json();
 
-      orderStatus = statusData.status;
+      console.log("Payment status check:", statusData);
 
-      if (orderStatus === "SUCCESS") {
-        alert("Transaction successful! You are now a premium user.");
-        // Optionally update UI to show premium features
+      if (statusData.orderStatus === "SUCCESS") {
+        finalStatus = "SUCCESS";
+        alert("✅ Transaction successful! You are now a premium user.");
+        localStorage.setItem("isPremium", "true");
+        leaderboardBtn.style.display = "block";
+
+        showPremiumUI();
         break;
-      } else if (orderStatus === "FAILED") {
-        alert("TRANSACTION FAILED");
+      } else if (statusData.orderStatus === "FAILED") {
+        finalStatus = "FAILED";
+        alert("❌ Transaction failed. Please try again.");
         break;
       }
     }
+
+    if (finalStatus === "PENDING") {
+      alert("⚠️ Payment still pending. Please refresh later.");
+    }
   } catch (err) {
-    console.error(err);
+    console.error("Error initiating payment:", err);
     alert("Error initiating payment");
   }
 });
 
-//for testing
-// const premiumBtn = document.getElementById("premium-btn");
+// ✅ Check payment status after Cashfree redirect
+document.addEventListener("DOMContentLoaded", async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const orderId = urlParams.get("order_id");
 
-// premiumBtn.addEventListener("click", async () => {
-//   const amount = 100; // testing amount
+  if (orderId) {
+    console.log("Detected payment redirect, checking status for:", orderId);
 
-//   try {
-//     const res = await fetch("http://localhost:5000/payment/create-order", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ amount }),
-//     });
+    try {
+      const res = await fetch(
+        `http://localhost:5000/payment/status/${orderId}`
+      );
+      const data = await res.json();
 
-//     const data = await res.json();
+      console.log("Payment verification result:", data);
 
-//     if (!data.success) {
-//       alert(data.message || "Failed to create payment order");
-//       return;
-//     }
+      if (data.orderStatus === "SUCCESS") {
+        alert("✅ Payment successful! You are now a Premium User.");
+        localStorage.setItem("isPremium", "true");
+        leaderboardBtn.style.display = "block";
+        showPremiumUI();
+      } else if (data.orderStatus === "FAILED") {
+        alert("❌ Payment failed. Please try again.");
+      } else {
+        alert("⚠️ Payment pending. Please check again later.");
+      }
 
-//     const cashfree = Cashfree({ mode: "sandbox" });
+      // Clean URL (remove ?order_id=... after showing alert)
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (err) {
+      console.error("Error verifying payment:", err);
+      alert("Failed to verify payment status. Please try again later.");
+    }
+  }
 
-//     cashfree.checkout({
-//       paymentSessionId: data.payment_session_id,
-//       redirectTarget: "_self",
-//     });
-//   } catch (err) {
-//     console.error(err);
-//     alert("Error initiating payment");
-//   }
-// });
+  // Check if already premium
+  if (localStorage.getItem("isPremium") === "true") {
+    showPremiumUI();
+  }
+});
+
+function showPremiumUI() {
+  const premiumBtn = document.getElementById("premium-btn");
+  premiumBtn.textContent = "🌟 Premium User";
+  premiumBtn.disabled = true;
+  premiumBtn.classList.add("premium-active");
+}
+
+const leaderboardBtn = document.getElementById("leaderboard-btn");
+const leaderboardContainer = document.getElementById("leaderboard-container");
+const leaderboardList = document.getElementById("leaderboard-list");
+
+// Show leaderboard button only for premium users
+const isPremium = localStorage.getItem("isPremium") === "true";
+
+if (!token || !userId) {
+  // User not logged in
+  leaderboardBtn.style.display = "none";
+} else if (isPremium) {
+  leaderboardBtn.style.display = "block";
+} else {
+  leaderboardBtn.style.display = "none";
+}
+leaderboardBtn.addEventListener("click", async () => {
+  if (!token || !userId) return alert("Please login first!");
+  try {
+    const res = await fetch("http://localhost:5000/premium/leaderboard", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (!data.success) return alert("Failed to fetch leaderboard");
+
+    leaderboardList.innerHTML = "";
+    data.leaderboard.forEach((user, index) => {
+      const li = document.createElement("li");
+      li.textContent = `${index + 1}. ${user.User.name} - ₹${
+        user.totalExpenses
+      }`;
+      if (user.userId === Number(userId)) li.classList.add("current-user");
+      leaderboardList.appendChild(li);
+    });
+    leaderboardContainer.style.display = "block";
+  } catch (err) {
+    console.error(err);
+    alert("Error fetching leaderboard");
+  }
+});
+
+// Logout
+const logoutBtn = document.getElementById("logout-btn");
+logoutBtn.addEventListener("click", () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("userId");
+  // localStorage.removeItem("isPremium");
+  alert("Logged out successfully!");
+  window.location.href = "./index.html";
+});

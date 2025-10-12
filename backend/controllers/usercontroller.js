@@ -28,7 +28,7 @@ const signup = async (req, res) => {
     });
     return res.status(201).json({
       message: "User created successfully",
-      response:newUser
+      response: newUser,
     });
   } catch (error) {
     console.error(error);
@@ -65,6 +65,7 @@ const login = async (req, res) => {
       success: true,
       userId: user.id,
       token,
+      isPremium: user.isPremium, // send actual premium status
     });
   } catch (error) {
     console.error(error);

@@ -13,10 +13,12 @@ app.use(express.static(path.join(__dirname, "../frontend")));
 const userRoutes = require("./routes/userRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const paymentRoutes = require("./routes/paymentRoutes.js");
+const premiumRoutes = require("./routes/premiumRoutes");
 
 // Routes
 app.use("/user", userRoutes);
 app.use("/expense", expenseRoutes);
 app.use("/payment", paymentRoutes);
+app.use("/premium", premiumRoutes);
 
 app.listen(5000, () => console.log("Server running on port 5000"));

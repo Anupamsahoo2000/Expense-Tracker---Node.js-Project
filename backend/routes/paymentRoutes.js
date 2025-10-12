@@ -1,17 +1,15 @@
 const express = require("express");
+const router = express.Router();
 const {
   createOrder,
   paymentWebhook,
+  checkPaymentStatus,
   orderStatus,
-  handleWebhook,
-} = require("../controllers/paymentController.js");
-
-const router = express.Router();
+} = require("../controllers/paymentController");
 
 router.post("/create-order", createOrder);
 router.post("/webhook", paymentWebhook);
-router.post("/webhook", handleWebhook);
-
+router.get("/status/:orderId", checkPaymentStatus);
 router.get("/order-status/:orderId", orderStatus);
 
 module.exports = router;

@@ -230,6 +230,7 @@ function showPremiumUI() {
   premiumBtn.textContent = "🌟 Premium User";
   premiumBtn.disabled = true;
   premiumBtn.classList.add("premium-active");
+  document.getElementById("leaderboard-btn").style.display = "block";
 }
 
 const leaderboardBtn = document.getElementById("leaderboard-btn");
@@ -259,10 +260,8 @@ leaderboardBtn.addEventListener("click", async () => {
     leaderboardList.innerHTML = "";
     data.leaderboard.forEach((user, index) => {
       const li = document.createElement("li");
-      li.textContent = `${index + 1}. ${user.User.name} - ₹${
-        user.totalExpenses
-      }`;
-      if (user.userId === Number(userId)) li.classList.add("current-user");
+      li.textContent = `${index + 1}. ${user.name} - ₹${user.totalExpenses}`;
+      if (user.id === Number(userId)) li.classList.add("current-user");
       leaderboardList.appendChild(li);
     });
     leaderboardContainer.style.display = "block";

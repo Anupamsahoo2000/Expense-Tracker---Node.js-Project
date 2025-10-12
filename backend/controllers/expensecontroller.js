@@ -1,9 +1,17 @@
 const Expense = require("../models/expenseModel");
+const User = require("../models/userModel");
 
 const addExpense = async (req, res) => {
   try {
     const { amount, description, category } = req.body;
     const userId = req.user.id; // set by auth middleware
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User not found" });
+    }
 
     if (!amount || !description || !category) {
       return res
@@ -11,12 +19,18 @@ const addExpense = async (req, res) => {
         .json({ success: false, message: "All fields are required" });
     }
 
+    // 1️⃣ Create the expense
     const newExpense = await Expense.create({
       amount,
       description,
       category,
       UserId: userId,
     });
+
+    // 2️⃣ Update the user's totalExpenses immediately
+    //const user = await User.findByPk(userId);
+    user.totalExpenses += parseFloat(amount);
+    await user.save();
 
     res.status(201).json({ success: true, expense: newExpense });
   } catch (err) {
@@ -44,7 +58,7 @@ const deleteExpense = async (req, res) => {
     const userId = req.user.id;
     const expenseId = req.params.id;
 
-    // ensure the expense belongs to the user before deleting
+    // 1️⃣ Find expense (ensure it belongs to user)
     const expense = await Expense.findOne({
       where: { id: expenseId, UserId: userId },
     });
@@ -55,7 +69,15 @@ const deleteExpense = async (req, res) => {
       });
     }
 
+    // 2️⃣ Deduct its amount from user's totalExpenses
+    const user = await User.findByPk(userId);
+    user.totalExpenses -= Number(expense.amount);
+    if (user.totalExpenses < 0) user.totalExpenses = 0; // safety check
+    await user.save();
+
+    // 3️⃣ Delete the expense
     await Expense.destroy({ where: { id: expenseId, UserId: userId } });
+
     res
       .status(200)
       .json({ success: true, message: "Expense deleted successfully" });

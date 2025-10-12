@@ -28,6 +28,9 @@ const Payment = sequelize.define("Payment", {
   },
 });
 
-Payment.belongsTo(User, { foreignKey: "userId", allowNull: false });
+Payment.belongsTo(User, {
+  foreignKey: { name: "userId", allowNull: false },
+  onDelete: "CASCADE",
+});
 User.hasMany(Payment, { foreignKey: "userId" });
 module.exports = Payment;

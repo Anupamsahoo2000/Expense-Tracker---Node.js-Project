@@ -25,6 +25,10 @@ const User = sequelize.define("User", {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
+  totalExpenses: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0,
+  },
 });
 
 module.exports = User;

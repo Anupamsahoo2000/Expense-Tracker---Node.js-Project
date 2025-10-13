@@ -6,6 +6,7 @@ if (!token) {
 }
 
 // Handle form submission
+// add expense
 document
   .getElementById("expense-form")
   .addEventListener("submit", async (e) => {
@@ -15,9 +16,15 @@ document
     const description = document.getElementById("description").value.trim();
     const category = document.getElementById("category").value;
 
-    if (!amount || !description || !category) {
-      alert("All fields are required!");
+    if (!amount || !description) {
+      alert("Please enter amount and description");
       return;
+    }
+    const expenseData = { amount, description };
+
+    // ✅ Only send category if user selected one
+    if (category && category.trim() !== "") {
+      expenseData.category = category;
     }
 
     try {
@@ -27,7 +34,7 @@ document
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ amount, description, category }),
+        body: JSON.stringify(expenseData),
       });
 
       const data = await res.json();

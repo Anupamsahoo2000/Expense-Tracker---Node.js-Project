@@ -1,5 +1,6 @@
 const Expense = require("../models/expenseModel");
 const User = require("../models/userModel");
+const { getCategoryFromAI } = require("../utils/ai");
 
 const addExpense = async (req, res) => {
   try {
@@ -13,17 +14,22 @@ const addExpense = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    if (!amount || !description || !category) {
+    if (!amount || !description) {
       return res
         .status(400)
-        .json({ success: false, message: "All fields are required" });
+        .json({ success: false, message: " amount and description required" });
+    }
+    //Ai category
+    let finalCategory = category;
+    if (!finalCategory || finalCategory.trim() === "") {
+      finalCategory = await getCategoryFromAI(description);
     }
 
     // 1️⃣ Create the expense
     const newExpense = await Expense.create({
       amount,
       description,
-      category,
+      category: finalCategory,
       UserId: userId,
     });
 

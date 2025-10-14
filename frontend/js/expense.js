@@ -1,12 +1,15 @@
 const token = localStorage.getItem("token");
 const userId = localStorage.getItem("userId");
+
 if (!token) {
   alert("Please login first!");
   window.location.href = "./index.html";
 }
 
-// Handle form submission
-// add expense
+// Axios default header for Authorization
+axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+// ✅ Add Expense
 document
   .getElementById("expense-form")
   .addEventListener("submit", async (e) => {
@@ -20,35 +23,25 @@ document
       alert("Please enter amount and description");
       return;
     }
-    const expenseData = { amount, description };
 
-    // ✅ Only send category if user selected one
+    const expenseData = { amount, description };
     if (category && category.trim() !== "") {
       expenseData.category = category;
     }
 
     try {
-      const res = await fetch("http://localhost:5000/expense/add-expense", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(expenseData),
-      });
+      const { data } = await axios.post(
+        "http://localhost:5000/expense/add-expense",
+        expenseData
+      );
 
-      const data = await res.json();
       console.log("Add expense response:", data);
 
-      if (res.ok && data.success) {
+      if (data.success) {
         document.getElementById("expense-form").reset();
-        loadExpenses(); // refresh list
+        loadExpenses();
       } else {
         alert(data.message || "Failed to add expense!");
-        if (res.status === 401) {
-          localStorage.removeItem("token");
-          window.location.href = "./index.html";
-        }
       }
     } catch (err) {
       console.error("Error adding expense:", err);
@@ -56,19 +49,16 @@ document
     }
   });
 
-// Load existing expenses
+// ✅ Load Expenses
 async function loadExpenses() {
   try {
-    const res = await fetch("http://localhost:5000/expense/get-expenses", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await res.json();
+    const { data } = await axios.get(
+      "http://localhost:5000/expense/get-expenses"
+    );
+
     console.log("Loaded expenses:", data);
 
-    if (res.ok && data.success) {
+    if (data.success) {
       const list = document.getElementById("expense-list");
       list.innerHTML = "";
       data.expenses.forEach((exp) => {
@@ -91,32 +81,30 @@ async function loadExpenses() {
   }
 }
 
-// Delete expense
+// ✅ Delete Expense
 async function deleteExpense(id) {
-  const res = await fetch(
-    `http://localhost:5000/expense/delete-expense/${id}`,
-    {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+  try {
+    const { data } = await axios.delete(
+      `http://localhost:5000/expense/delete-expense/${id}`
+    );
+    if (data.success) {
+      loadExpenses();
+    } else {
+      alert(data.message || "Failed to delete expense");
     }
-  );
-  const data = await res.json();
-  if (res.ok && data.success) {
-    loadExpenses();
-  } else {
-    alert(data.message || "Failed to delete expense");
+  } catch (err) {
+    console.error("Error deleting expense:", err);
+    alert("Failed to delete expense");
   }
 }
+
 // Load expenses on page load
 document.addEventListener("DOMContentLoaded", loadExpenses);
 
-//Cashfree Payment Integration
+// ✅ Cashfree Payment Integration
 const premiumBtn = document.getElementById("premium-btn");
 premiumBtn.addEventListener("click", async () => {
-  //const userId = localStorage.getItem("userId"); // fetch stored userId
-  const amount = 100; // hardcoded amount for premium upgrade
-
-  console.log("Premium button clicked", { userId, amount });
+  const amount = 100;
 
   if (!userId) {
     alert("Please login first!");
@@ -124,25 +112,20 @@ premiumBtn.addEventListener("click", async () => {
   }
 
   try {
-    const res = await fetch("http://localhost:5000/payment/create-order", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const { data } = await axios.post(
+      "http://localhost:5000/payment/create-order",
+      {
         amount,
-        userId: Number(userId), // convert to number
-      }),
-    });
-
-    const data = await res.json();
+        userId: Number(userId),
+      }
+    );
 
     if (!data.success) {
       alert(data.message || "Failed to create payment order");
       return;
     }
 
-    // Initialize Cashfree checkout
     const orderId = data.order_id;
-
     const cashfree = Cashfree({ mode: "sandbox" });
 
     const checkoutOptions = {
@@ -151,19 +134,16 @@ premiumBtn.addEventListener("click", async () => {
     };
 
     const result = await cashfree.checkout(checkoutOptions);
-
     console.log("Payment result:", result);
 
-    // ✅ After checkout, check order status directly from backend (Cashfree API)
     let finalStatus = "PENDING";
 
     while (finalStatus === "PENDING") {
-      await new Promise((r) => setTimeout(r, 3000)); // Wait 3s between checks
-
-      const statusRes = await fetch(
+      await new Promise((r) => setTimeout(r, 3000));
+      const statusRes = await axios.get(
         `http://localhost:5000/payment/status/${orderId}`
       );
-      const statusData = await statusRes.json();
+      const statusData = statusRes.data;
 
       console.log("Payment status check:", statusData);
 
@@ -172,7 +152,6 @@ premiumBtn.addEventListener("click", async () => {
         alert("✅ Transaction successful! You are now a premium user.");
         localStorage.setItem("isPremium", "true");
         leaderboardBtn.style.display = "block";
-
         showPremiumUI();
         break;
       } else if (statusData.orderStatus === "FAILED") {
@@ -191,7 +170,7 @@ premiumBtn.addEventListener("click", async () => {
   }
 });
 
-// ✅ Check payment status after Cashfree redirect
+// ✅ Verify Payment After Redirect
 document.addEventListener("DOMContentLoaded", async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const orderId = urlParams.get("order_id");
@@ -200,10 +179,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("Detected payment redirect, checking status for:", orderId);
 
     try {
-      const res = await fetch(
+      const { data } = await axios.get(
         `http://localhost:5000/payment/status/${orderId}`
       );
-      const data = await res.json();
 
       console.log("Payment verification result:", data);
 
@@ -218,7 +196,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         alert("⚠️ Payment pending. Please check again later.");
       }
 
-      // Clean URL (remove ?order_id=... after showing alert)
       window.history.replaceState({}, document.title, window.location.pathname);
     } catch (err) {
       console.error("Error verifying payment:", err);
@@ -226,7 +203,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Check if already premium
   if (localStorage.getItem("isPremium") === "true") {
     showPremiumUI();
   }
@@ -240,28 +216,27 @@ function showPremiumUI() {
   document.getElementById("leaderboard-btn").style.display = "block";
 }
 
+// ✅ Leaderboard
 const leaderboardBtn = document.getElementById("leaderboard-btn");
 const leaderboardContainer = document.getElementById("leaderboard-container");
 const leaderboardList = document.getElementById("leaderboard-list");
 
-// Show leaderboard button only for premium users
 const isPremium = localStorage.getItem("isPremium") === "true";
 
 if (!token || !userId) {
-  // User not logged in
   leaderboardBtn.style.display = "none";
 } else if (isPremium) {
   leaderboardBtn.style.display = "block";
 } else {
   leaderboardBtn.style.display = "none";
 }
+
 leaderboardBtn.addEventListener("click", async () => {
   if (!token || !userId) return alert("Please login first!");
   try {
-    const res = await fetch("http://localhost:5000/premium/leaderboard", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
+    const { data } = await axios.get(
+      "http://localhost:5000/premium/leaderboard"
+    );
     if (!data.success) return alert("Failed to fetch leaderboard");
 
     leaderboardList.innerHTML = "";
@@ -278,12 +253,191 @@ leaderboardBtn.addEventListener("click", async () => {
   }
 });
 
-// Logout
+// ✅ Logout
 const logoutBtn = document.getElementById("logout-btn");
 logoutBtn.addEventListener("click", () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("userId");
-  // localStorage.removeItem("isPremium");
+  localStorage.clear();
   alert("Logged out successfully!");
   window.location.href = "./index.html";
 });
+//Sample mock data
+const transactions = [
+  {
+    date: "2025-10-12",
+    desc: "Salary",
+    category: "Income",
+    type: "Income",
+    amount: 50000,
+  },
+  {
+    date: "2025-10-12",
+    desc: "Groceries",
+    category: "Food",
+    type: "Expense",
+    amount: 1200,
+  },
+  {
+    date: "2025-10-11",
+    desc: "Electricity Bill",
+    category: "Utilities",
+    type: "Expense",
+    amount: 1800,
+  },
+  {
+    date: "2025-10-10",
+    desc: "Freelance",
+    category: "Income",
+    type: "Income",
+    amount: 8000,
+  },
+  {
+    date: "2025-09-30",
+    desc: "Movie Night",
+    category: "Entertainment",
+    type: "Expense",
+    amount: 600,
+  },
+];
+
+const downloadBtn = document.getElementById("downloadBtn");
+const toggleDashboardBtn = document.getElementById("toggleDashboardBtn");
+const fullDashboard = document.getElementById("full-dashboard");
+
+// Enable buttons only for premium users
+if (isPremium) {
+  downloadBtn.disabled = false;
+  downloadBtn.classList.remove("disabled");
+
+  toggleDashboardBtn.disabled = false;
+  toggleDashboardBtn.classList.remove("disabled");
+} else {
+  downloadBtn.disabled = true;
+  downloadBtn.classList.add("disabled");
+
+  toggleDashboardBtn.disabled = true;
+  toggleDashboardBtn.classList.add("disabled");
+}
+
+// Render transactions function
+function renderTransactions(data) {
+  const transactionBody = document.getElementById("transactionBody");
+  const totalIncome = document.getElementById("totalIncome");
+  const totalExpense = document.getElementById("totalExpense");
+  const balance = document.getElementById("balance");
+
+  transactionBody.innerHTML = "";
+  let incomeTotal = 0;
+  let expenseTotal = 0;
+
+  data.forEach((t) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${t.date}</td>
+      <td>${t.desc}</td>
+      <td>${t.category}</td>
+      <td>${t.type}</td>
+      <td>₹${t.amount}</td>
+    `;
+    transactionBody.appendChild(row);
+
+    if (t.type === "Income") incomeTotal += t.amount;
+    else expenseTotal += t.amount;
+  });
+
+  totalIncome.textContent = `₹${incomeTotal}`;
+  totalExpense.textContent = `₹${expenseTotal}`;
+  balance.textContent = `₹${incomeTotal - expenseTotal}`;
+}
+// Toggle dashboard visibility
+toggleDashboardBtn.addEventListener("click", () => {
+  if (fullDashboard.style.display === "none") {
+    fullDashboard.style.display = "block";
+    toggleDashboardBtn.textContent = "Hide Expense Dashboard";
+    //renderTransactions(transactions);
+  } else {
+    fullDashboard.style.display = "none";
+    toggleDashboardBtn.textContent = "Show Expense Dashboard";
+  }
+});
+
+// Pagination variables
+
+let currentPage = 1;
+let rowsPerPage = localStorage.getItem("pageSize");
+
+// Page size selector
+const pageSizeSelect = document.getElementById("pageSize") || 10;
+pageSizeSelect.value = rowsPerPage;
+
+// Update page size when user changes it
+pageSizeSelect.addEventListener("change", (e) => {
+  rowsPerPage = parseInt(e.target.value);
+  localStorage.setItem("pageSize", rowsPerPage);
+  currentPage = 1; // reset to first page
+  renderTransactionsPage();
+});
+// Show 2 expenses per page
+
+// Pagination elements
+const prevPageBtn = document.getElementById("prevPage");
+const nextPageBtn = document.getElementById("nextPage");
+const pageInfo = document.getElementById("pageInfo");
+
+// Render transactions for the current page
+function renderTransactionsPage() {
+  const start = (currentPage - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const paginatedData = transactions.slice(start, end);
+
+  const transactionBody = document.getElementById("transactionBody");
+  transactionBody.innerHTML = "";
+
+  let incomeTotal = 0;
+  let expenseTotal = 0;
+
+  paginatedData.forEach((t) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${t.date}</td>
+      <td>${t.desc}</td>
+      <td>${t.category}</td>
+      <td>${t.type}</td>
+      <td>₹${t.amount}</td>
+    `;
+    transactionBody.appendChild(row);
+
+    if (t.type === "Income") incomeTotal += t.amount;
+    else expenseTotal += t.amount;
+  });
+
+  document.getElementById("totalIncome").textContent = `₹${incomeTotal}`;
+  document.getElementById("totalExpense").textContent = `₹${expenseTotal}`;
+  document.getElementById("balance").textContent = `₹${
+    incomeTotal - expenseTotal
+  }`;
+
+  const totalPages = Math.ceil(transactions.length / rowsPerPage);
+  pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+
+  prevPageBtn.disabled = currentPage === 1;
+  nextPageBtn.disabled = currentPage === totalPages;
+}
+
+// Event listeners for pagination
+prevPageBtn.addEventListener("click", () => {
+  if (currentPage > 1) {
+    currentPage--;
+    renderTransactionsPage(transactions);
+  }
+});
+
+nextPageBtn.addEventListener("click", () => {
+  const totalPages = Math.ceil(transactions.length / rowsPerPage);
+  if (currentPage < totalPages) {
+    currentPage++;
+    renderTransactionsPage(transactions);
+  }
+});
+
+// Initially load first page
+renderTransactionsPage(transactions);

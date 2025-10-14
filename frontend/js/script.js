@@ -1,24 +1,24 @@
 const signupForm = document.getElementById("signupForm");
 const loginForm = document.getElementById("loginForm");
-const toggleForm = document.getElementById("toggleForm");
 const formTitle = document.getElementById("formTitle");
+const showSignup = document.getElementById("showSignup");
+const showLogin = document.getElementById("showLogin");
 
-// Toggle forms
-toggleForm.addEventListener("click", () => {
-  if (signupForm.classList.contains("active")) {
-    signupForm.classList.remove("active");
-    loginForm.classList.add("active");
-    formTitle.textContent = "Login";
-    toggleForm.textContent = "Don’t have an account? Sign Up";
-  } else {
-    loginForm.classList.remove("active");
-    signupForm.classList.add("active");
-    formTitle.textContent = "Sign Up";
-    toggleForm.textContent = "Already registered? Login";
-  }
+// 🔹 Switch to Signup
+showSignup.addEventListener("click", () => {
+  loginForm.style.display = "none";
+  signupForm.style.display = "flex";
+  formTitle.textContent = "Sign Up";
 });
 
-// Signup Submit
+// 🔹 Switch to Login
+showLogin.addEventListener("click", () => {
+  signupForm.style.display = "none";
+  loginForm.style.display = "flex";
+  formTitle.textContent = "Login";
+});
+
+// 🔹 Signup Submit
 signupForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const name = document.getElementById("signupName").value.trim();
@@ -26,54 +26,42 @@ signupForm.addEventListener("submit", async (e) => {
   const password = document.getElementById("signupPassword").value.trim();
 
   try {
-    const res = await fetch("http://localhost:5000/user/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+    const res = await axios.post("http://localhost:5000/user/signup", {
+      name,
+      email,
+      password,
     });
-    const data = await res.json();
-    alert(data.message);
-
-    if (res.ok) {
-      signupForm.reset();
-    } else {
-      alert("Error: " + (data.message || "Something went wrong"));
-    }
+    alert(res.data.message);
+    signupForm.reset();
   } catch (err) {
-    alert("Failed to connect to server");
+    console.error("Signup Error:", err);
+    alert(err.response?.data?.message || "Signup failed. Try again.");
   }
 });
 
-// Login Submit
+// 🔹 Login Submit
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-
   const email = document.getElementById("loginEmail").value.trim();
   const password = document.getElementById("loginPassword").value.trim();
 
   try {
-    const res = await fetch("http://localhost:5000/user/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+    const res = await axios.post("http://localhost:5000/user/login", {
+      email,
+      password,
     });
 
-    const data = await res.json();
-    console.log("Login response:", data);
-
+    const data = res.data;
     if (data.success) {
-      // ✅ store both userId and JWT token
       localStorage.setItem("userId", data.userId);
       localStorage.setItem("token", data.token);
-      localStorage.setItem("isPremium", data.isPremium ? "true" : "false"); // IMPORTANT: store actual premium status
-
-      // redirect AFTER storage
+      localStorage.setItem("isPremium", data.isPremium ? "true" : "false");
       window.location.href = "./expense.html";
     } else {
       alert(data.message || "Login failed!");
     }
   } catch (err) {
-    console.error("Error:", err);
-    alert("Failed to connect to server");
+    console.error("Login Error:", err);
+    alert(err.response?.data?.message || "Login failed. Try again.");
   }
 });

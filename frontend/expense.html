@@ -19,6 +19,76 @@
         <button id="logout-btn" class="btn logout-btn">Logout</button>
       </div>
     </header>
+    <div class="container">
+      <h1>Expense & Income Dashboard</h1>
+
+      <!-- Only for all users -->
+      <button id="downloadBtn" class="disabled" disabled>
+        Download Expenses
+      </button>
+      <br />
+      <button id="toggleDashboardBtn" class="disabled" disabled>
+        Show Expense Dashboard
+      </button>
+
+      <!-- Full dashboard -->
+      <div id="full-dashboard" style="display: none">
+        <!-- Filters -->
+        <div class="filters">
+          <label for="filter">View:</label>
+          <select id="filter">
+            <option value="all">All</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary">
+          <div class="card">
+            <h3>Total Income</h3>
+            <p id="totalIncome">₹0</p>
+          </div>
+          <div class="card">
+            <h3>Total Expense</h3>
+            <p id="totalExpense">₹0</p>
+          </div>
+          <div class="card">
+            <h3>Balance</h3>
+            <p id="balance">₹0</p>
+          </div>
+        </div>
+
+        <!-- Table Section -->
+        <table id="transactionTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody id="transactionBody"></tbody>
+        </table>
+        <!-- <div id="pagination" class="pagination">
+          <button id="prevPage">Previous</button>
+          <span id="pageInfo">Page 1 of 1</span>
+          <button id="nextPage">Next</button>
+        </div> -->
+        <div class="pagination-controls">
+          <label for="pageSize">Expenses per page:</label>
+          <select id="pageSize">
+            <option value="2">2</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
     <main>
       <section class="expense-container">
@@ -61,6 +131,7 @@
           <h3>Your Expenses</h3>
           <ul id="expense-list"></ul>
         </div>
+
         <button id="leaderboard-btn" style="display: none">
           Show Leaderboard
         </button>
@@ -73,6 +144,7 @@
 
     <!-- Cashfree JS SDK v3 -->
     <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="./js/expense.js"></script>
   </body>
 </html>

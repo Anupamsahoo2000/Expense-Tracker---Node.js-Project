@@ -20,6 +20,10 @@ const Expense = sequelize.define("Expense", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  note: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 });
 
 // Make foreign key nullable if using SET NULL

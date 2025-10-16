@@ -48,7 +48,32 @@ document
       alert("Failed to connect to server");
     }
   });
+function renderExpenseList() {
+  const list = document.getElementById("expense-list");
+  list.innerHTML = "";
 
+  if (transactions.length === 0) {
+    list.innerHTML = "<li>No expenses yet</li>";
+    return;
+  }
+
+  transactions.forEach((t) => {
+    const li = document.createElement("li");
+    li.textContent = `${t.desc} [${t.category}] - ₹${t.amount}`;
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "Delete";
+    delBtn.classList.add("delete-btn");
+    delBtn.onclick = () => deleteExpense(t.id);
+    li.appendChild(delBtn);
+
+    list.appendChild(li);
+  });
+}
+
+let transactions = [];
+let currentPage = 1;
+let rowsPerPage = parseInt(localStorage.getItem("pageSize")) || 5;
 // ✅ Load Expenses
 async function loadExpenses() {
   try {
@@ -59,25 +84,24 @@ async function loadExpenses() {
     console.log("Loaded expenses:", data);
 
     if (data.success) {
-      const list = document.getElementById("expense-list");
-      list.innerHTML = "";
-      data.expenses.forEach((exp) => {
-        const li = document.createElement("li");
-        li.textContent = `${exp.description} - ₹${exp.amount} (${exp.category})`;
+      // Convert backend expense objects into the same shape as your transaction table
+      transactions = data.expenses.map((exp) => ({
+        id: exp.id,
+        date: exp.createdAt ? exp.createdAt.split("T")[0] : "N/A", // or exp.date if available
+        desc: exp.description || "No Description",
+        category: exp.category || "General",
+        type: "Expense", // or "Income" if you store that in DB
+        amount: exp.amount || 0,
+      }));
+      renderTransactionsPage();
 
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "Delete";
-        delBtn.classList.add("delete-btn");
-        delBtn.onclick = () => deleteExpense(exp.id);
-        li.appendChild(delBtn);
-
-        list.appendChild(li);
-      });
+      renderExpenseList();
     } else {
-      console.warn("Failed to load expenses:", data.message);
+      alert("Failed to load expenses: " + data.message);
     }
   } catch (err) {
     console.error("Error loading expenses:", err);
+    alert("Error loading expenses");
   }
 }
 
@@ -88,7 +112,7 @@ async function deleteExpense(id) {
       `http://localhost:5000/expense/delete-expense/${id}`
     );
     if (data.success) {
-      loadExpenses();
+      await loadExpenses();
     } else {
       alert(data.message || "Failed to delete expense");
     }
@@ -97,7 +121,6 @@ async function deleteExpense(id) {
     alert("Failed to delete expense");
   }
 }
-
 // Load expenses on page load
 document.addEventListener("DOMContentLoaded", loadExpenses);
 
@@ -261,43 +284,6 @@ logoutBtn.addEventListener("click", () => {
   window.location.href = "./index.html";
 });
 //Sample mock data
-const transactions = [
-  {
-    date: "2025-10-12",
-    desc: "Salary",
-    category: "Income",
-    type: "Income",
-    amount: 50000,
-  },
-  {
-    date: "2025-10-12",
-    desc: "Groceries",
-    category: "Food",
-    type: "Expense",
-    amount: 1200,
-  },
-  {
-    date: "2025-10-11",
-    desc: "Electricity Bill",
-    category: "Utilities",
-    type: "Expense",
-    amount: 1800,
-  },
-  {
-    date: "2025-10-10",
-    desc: "Freelance",
-    category: "Income",
-    type: "Income",
-    amount: 8000,
-  },
-  {
-    date: "2025-09-30",
-    desc: "Movie Night",
-    category: "Entertainment",
-    type: "Expense",
-    amount: 600,
-  },
-];
 
 const downloadBtn = document.getElementById("downloadBtn");
 const toggleDashboardBtn = document.getElementById("toggleDashboardBtn");
@@ -307,23 +293,76 @@ const fullDashboard = document.getElementById("full-dashboard");
 if (isPremium) {
   downloadBtn.disabled = false;
   downloadBtn.classList.remove("disabled");
-
   toggleDashboardBtn.disabled = false;
   toggleDashboardBtn.classList.remove("disabled");
 } else {
   downloadBtn.disabled = true;
   downloadBtn.classList.add("disabled");
-
   toggleDashboardBtn.disabled = true;
   toggleDashboardBtn.classList.add("disabled");
 }
 
+async function downloadExpenses() {
+  if (!isPremium) {
+    alert("🚫 Only premium users can download expenses!");
+    return;
+  }
+
+  try {
+    const res = await axios.get(
+      "http://localhost:5000/expense/download-expenses",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (res.data && res.data.success) {
+      const s3Url = res.data.fileURL;
+
+      // ✅ Show the S3 link dynamically on screen
+      const resultContainer =
+        document.getElementById("downloadResult") ||
+        (() => {
+          const div = document.createElement("div");
+          div.id = "downloadResult";
+          div.style.marginTop = "15px";
+          div.style.textAlign = "center";
+          document.body.appendChild(div);
+          return div;
+        })();
+
+      resultContainer.innerHTML = `
+        <p style="font-weight: 500;">✅ Your expense file has been generated!</p>
+        <a href="${s3Url}" target="_blank" style="
+          color: #007bff;
+          text-decoration: underline;
+          font-weight: 600;
+        ">
+          Click here to download from AWS S3
+        </a>
+      `;
+    } else {
+      alert(res.data.message || "Failed to download expenses.");
+    }
+  } catch (err) {
+    console.error("❌ Error downloading expenses:", err);
+
+    if (err.response && err.response.status === 401) {
+      alert("🚫 You are not a premium user!");
+    } else {
+      alert("⚠️ Error generating file. Please try again later.");
+    }
+  }
+}
+
+// ✅ Attach event listener
+downloadBtn.addEventListener("click", downloadExpenses);
+
 // Render transactions function
 function renderTransactions(data) {
   const transactionBody = document.getElementById("transactionBody");
-  const totalIncome = document.getElementById("totalIncome");
+
   const totalExpense = document.getElementById("totalExpense");
-  const balance = document.getElementById("balance");
 
   transactionBody.innerHTML = "";
   let incomeTotal = 0;
@@ -339,14 +378,9 @@ function renderTransactions(data) {
       <td>₹${t.amount}</td>
     `;
     transactionBody.appendChild(row);
-
-    if (t.type === "Income") incomeTotal += t.amount;
-    else expenseTotal += t.amount;
   });
 
-  totalIncome.textContent = `₹${incomeTotal}`;
   totalExpense.textContent = `₹${expenseTotal}`;
-  balance.textContent = `₹${incomeTotal - expenseTotal}`;
 }
 // Toggle dashboard visibility
 toggleDashboardBtn.addEventListener("click", () => {
@@ -361,9 +395,6 @@ toggleDashboardBtn.addEventListener("click", () => {
 });
 
 // Pagination variables
-
-let currentPage = 1;
-let rowsPerPage = localStorage.getItem("pageSize");
 
 // Page size selector
 const pageSizeSelect = document.getElementById("pageSize") || 10;
@@ -384,6 +415,7 @@ const nextPageBtn = document.getElementById("nextPage");
 const pageInfo = document.getElementById("pageInfo");
 
 // Render transactions for the current page
+// Render transactions for the current page
 function renderTransactionsPage() {
   const start = (currentPage - 1) * rowsPerPage;
   const end = start + rowsPerPage;
@@ -392,9 +424,14 @@ function renderTransactionsPage() {
   const transactionBody = document.getElementById("transactionBody");
   transactionBody.innerHTML = "";
 
-  let incomeTotal = 0;
+  // Only calculate total expense
   let expenseTotal = 0;
 
+  transactions.forEach((t) => {
+    if (t.type === "Expense") expenseTotal += t.amount;
+  });
+
+  // Render only current page rows
   paginatedData.forEach((t) => {
     const row = document.createElement("tr");
     row.innerHTML = `
@@ -405,22 +442,17 @@ function renderTransactionsPage() {
       <td>₹${t.amount}</td>
     `;
     transactionBody.appendChild(row);
-
-    if (t.type === "Income") incomeTotal += t.amount;
-    else expenseTotal += t.amount;
   });
 
-  document.getElementById("totalIncome").textContent = `₹${incomeTotal}`;
+  // Update total expense only
   document.getElementById("totalExpense").textContent = `₹${expenseTotal}`;
-  document.getElementById("balance").textContent = `₹${
-    incomeTotal - expenseTotal
-  }`;
 
-  const totalPages = Math.ceil(transactions.length / rowsPerPage);
+  const totalPages = Math.ceil(transactions.length / rowsPerPage) || 1;
   pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
 
   prevPageBtn.disabled = currentPage === 1;
-  nextPageBtn.disabled = currentPage === totalPages;
+  nextPageBtn.disabled =
+    currentPage === totalPages || transactions.length === 0;
 }
 
 // Event listeners for pagination
@@ -440,4 +472,4 @@ nextPageBtn.addEventListener("click", () => {
 });
 
 // Initially load first page
-renderTransactionsPage(transactions);
+//renderTransactionsPage(transactions);

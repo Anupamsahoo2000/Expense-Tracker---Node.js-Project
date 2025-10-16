@@ -352,3 +352,19 @@ button.disabled {
   background-color: #aaa;
   cursor: not-allowed;
 }
+.download-result {
+  margin-top: 10px;
+  background: #f7f7f7;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+
+.download-result a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.download-result a:hover {
+  text-decoration: underline;
+}

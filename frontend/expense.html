@@ -26,6 +26,8 @@
       <button id="downloadBtn" class="disabled" disabled>
         Download Expenses
       </button>
+      <div id="downloadResult" class="download-result"></div>
+
       <br />
       <button id="toggleDashboardBtn" class="disabled" disabled>
         Show Expense Dashboard
@@ -47,16 +49,8 @@
         <!-- Summary -->
         <div class="summary">
           <div class="card">
-            <h3>Total Income</h3>
-            <p id="totalIncome">₹0</p>
-          </div>
-          <div class="card">
             <h3>Total Expense</h3>
             <p id="totalExpense">₹0</p>
-          </div>
-          <div class="card">
-            <h3>Balance</h3>
-            <p id="balance">₹0</p>
           </div>
         </div>
 
@@ -73,11 +67,11 @@
           </thead>
           <tbody id="transactionBody"></tbody>
         </table>
-        <!-- <div id="pagination" class="pagination">
+        <div id="pagination" class="pagination">
           <button id="prevPage">Previous</button>
           <span id="pageInfo">Page 1 of 1</span>
           <button id="nextPage">Next</button>
-        </div> -->
+        </div>
         <div class="pagination-controls">
           <label for="pageSize">Expenses per page:</label>
           <select id="pageSize">

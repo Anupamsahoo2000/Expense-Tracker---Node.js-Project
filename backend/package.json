@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@google/genai": "^1.24.0",
+    "aws-sdk": "^2.1692.0",
     "bcrypt": "^6.0.0",
     "cashfree-pg": "^5.0.8",
     "compression": "^1.8.1",

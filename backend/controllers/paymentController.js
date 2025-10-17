@@ -9,6 +9,8 @@ const cashfree = new Cashfree(
   process.env.CASHFREE_SECRET_KEY
 );
 
+const base_url = "http://localhost:5000";
+
 // ✅ 1️⃣ Create a new payment order
 const createOrder = async (req, res) => {
   try {
@@ -30,7 +32,7 @@ const createOrder = async (req, res) => {
       },
       order_meta: {
         // Redirect user after payment completion
-        return_url: `http://localhost:5000/expense.html?order_id=${orderId}`,
+        return_url: `${base_url}/expense.html?order_id=${orderId}`,
       },
       order_note: "Expense Tracker Premium",
       order_expiry_time: new Date(

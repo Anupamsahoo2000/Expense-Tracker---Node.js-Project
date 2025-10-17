@@ -30,7 +30,7 @@ const createOrder = async (req, res) => {
       },
       order_meta: {
         // Redirect user after payment completion
-        return_url: `http://127.0.0.1:5500/frontend/expense.html?order_id=${orderId}`,
+        return_url: `http://localhost:5000/expense.html?order_id=${orderId}`,
       },
       order_note: "Expense Tracker Premium",
       order_expiry_time: new Date(

@@ -1,3 +1,6 @@
+const base_url = "http://localhost:5000";
+
+
 document.getElementById("forgotForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const email = document.getElementById("forgotEmail").value.trim();
@@ -6,7 +9,7 @@ document.getElementById("forgotForm").addEventListener("submit", async (e) => {
 
   try {
     const res = await axios.post(
-      "http://localhost:5000/password/forgotpassword",
+      `${base_url}/password/forgotpassword`,
       { email }
     );
     alert(res.data.message || "Reset link sent to your email!");

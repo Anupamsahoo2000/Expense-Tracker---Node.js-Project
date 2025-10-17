@@ -3,6 +3,7 @@ const loginForm = document.getElementById("loginForm");
 const formTitle = document.getElementById("formTitle");
 const showSignup = document.getElementById("showSignup");
 const showLogin = document.getElementById("showLogin");
+const base_url = "http://localhost:5000";
 
 // 🔹 Switch to Signup
 showSignup.addEventListener("click", () => {
@@ -26,7 +27,7 @@ signupForm.addEventListener("submit", async (e) => {
   const password = document.getElementById("signupPassword").value.trim();
 
   try {
-    const res = await axios.post("http://localhost:5000/user/signup", {
+    const res = await axios.post(`${base_url}/user/signup`, {
       name,
       email,
       password,
@@ -46,7 +47,7 @@ loginForm.addEventListener("submit", async (e) => {
   const password = document.getElementById("loginPassword").value.trim();
 
   try {
-    const res = await axios.post("http://localhost:5000/user/login", {
+    const res = await axios.post(`${base_url}/user/login`, {
       email,
       password,
     });

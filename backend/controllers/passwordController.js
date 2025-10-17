@@ -6,6 +6,9 @@ const User = require("../models/userModel");
 const ForgotPasswordRequest = require("../models/forgetPassword");
 require("dotenv").config();
 
+const base_url = "http://localhost:5000";
+
+
 // ------------------ Create Forgot Password Request & Send Email ------------------
 const forgotPassword = async (req, res) => {
   try {
@@ -20,7 +23,7 @@ const forgotPassword = async (req, res) => {
       userId: user.id,
     });
 
-    const resetLink = `http://localhost:5000/reset-password.html?id=${forgotRequest.id}`;
+    const resetLink = `${base_url}/reset-password.html?id=${forgotRequest.id}`;
 
     // Send email via Brevo API
     const defaultClient = SibApiV3Sdk.ApiClient.instance;

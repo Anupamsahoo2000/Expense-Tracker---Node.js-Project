@@ -1,5 +1,6 @@
 const resetForm = document.getElementById("resetForm");
 const msg = document.getElementById("msg");
+const base_url = "http://localhost:5000";
 
 // Extract request ID from query params
 const params = new URLSearchParams(window.location.search);
@@ -9,7 +10,7 @@ const requestId = params.get("id");
 async function verifyLink() {
   try {
     const res = await axios.get(
-      `http://localhost:5000/password/resetpassword/${requestId}`
+      `${base_url}/password/resetpassword/${requestId}`
     );
     console.log(res.data.message);
   } catch (err) {
@@ -28,7 +29,7 @@ resetForm.addEventListener("submit", async (e) => {
 
   try {
     const res = await axios.post(
-      `http://localhost:5000/password/resetpassword/${requestId}`,
+      `${base_url}/password/resetpassword/${requestId}`,
       { password }
     );
     msg.style.color = "green";

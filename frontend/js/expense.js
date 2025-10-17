@@ -1,5 +1,6 @@
 const token = localStorage.getItem("token");
 const userId = localStorage.getItem("userId");
+const base_url = "http://localhost:5000";
 
 if (!token) {
   alert("Please login first!");
@@ -31,7 +32,7 @@ document
 
     try {
       const { data } = await axios.post(
-        "http://localhost:5000/expense/add-expense",
+        `${base_url}/expense/add-expense`,
         expenseData
       );
 
@@ -78,7 +79,7 @@ let rowsPerPage = parseInt(localStorage.getItem("pageSize")) || 5;
 async function loadExpenses() {
   try {
     const { data } = await axios.get(
-      "http://localhost:5000/expense/get-expenses"
+      `${base_url}/expense/get-expenses`
     );
 
     console.log("Loaded expenses:", data);
@@ -109,7 +110,7 @@ async function loadExpenses() {
 async function deleteExpense(id) {
   try {
     const { data } = await axios.delete(
-      `http://localhost:5000/expense/delete-expense/${id}`
+      `${base_url}/expense/delete-expense/${id}`
     );
     if (data.success) {
       await loadExpenses();
@@ -136,7 +137,7 @@ premiumBtn.addEventListener("click", async () => {
 
   try {
     const { data } = await axios.post(
-      "http://localhost:5000/payment/create-order",
+      `${base_url}/payment/create-order`,
       {
         amount,
         userId: Number(userId),
@@ -164,7 +165,7 @@ premiumBtn.addEventListener("click", async () => {
     while (finalStatus === "PENDING") {
       await new Promise((r) => setTimeout(r, 3000));
       const statusRes = await axios.get(
-        `http://localhost:5000/payment/status/${orderId}`
+        `${base_url}/payment/status/${orderId}`
       );
       const statusData = statusRes.data;
 
@@ -203,7 +204,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       const { data } = await axios.get(
-        `http://localhost:5000/payment/status/${orderId}`
+        `${base_url}/payment/status/${orderId}`
       );
 
       console.log("Payment verification result:", data);
@@ -258,7 +259,7 @@ leaderboardBtn.addEventListener("click", async () => {
   if (!token || !userId) return alert("Please login first!");
   try {
     const { data } = await axios.get(
-      "http://localhost:5000/premium/leaderboard"
+      `${base_url}/premium/leaderboard`
     );
     if (!data.success) return alert("Failed to fetch leaderboard");
 
@@ -310,7 +311,7 @@ async function downloadExpenses() {
 
   try {
     const res = await axios.get(
-      "http://localhost:5000/expense/download-expenses",
+      `${base_url}/expense/download-expenses`,
       {
         headers: { Authorization: `Bearer ${token}` },
       }

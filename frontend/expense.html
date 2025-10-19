@@ -4,106 +4,238 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Expense Tracker</title>
+
+    <!-- ✅ Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- ✅ Tailwind Config -->
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#6366F1",
+              secondary: "#A5B4FC",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      * {
+        transition: background-color 0.3s ease, color 0.3s ease,
+          border 0.3s ease;
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(100, 100, 100, 0.3);
+        border-radius: 10px;
+      }
+    </style>
+
     <link rel="stylesheet" href="./css/expense.css" />
   </head>
 
-  <body>
-    <header class="top-bar">
-      <a href="./index.html">
-        <h1>Expense Tracker</h1>
+  <body
+    class="min-h-screen font-sans bg-gradient-to-br from-gray-100 via-white to-gray-200 dark:from-gray-900 dark:via-gray-950 dark:to-black text-gray-800 dark:text-gray-100 transition-all duration-500"
+    style="display: none"
+  >
+    <!-- ===== Header ===== -->
+    <header
+      class="w-full sticky top-0 z-50 bg-white/30 dark:bg-gray-900/30 backdrop-blur-xl border-b border-white/20 flex justify-between items-center px-6 py-4 shadow-sm"
+    >
+      <a href="./index.html" class="no-underline">
+        <h1
+          class="text-xl md:text-2xl font-semibold text-gray-800 dark:text-white"
+        >
+          💰 Expense Tracker
+        </h1>
       </a>
-      <div class="header-buttons">
-        <button id="premium-btn" class="btn premium-btn">
-          Upgrade to Premium
+
+      <div class="flex items-center gap-3">
+        <!-- Theme Toggle -->
+        <button
+          id="theme-toggle"
+          class="flex items-center justify-center w-9 h-9 rounded-full bg-white/40 dark:bg-gray-700/60 backdrop-blur-md shadow-md hover:scale-105 transition-all"
+          title="Toggle Light/Dark Mode"
+        >
+          <svg
+            id="theme-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="w-5 h-5"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 3v1m0 16v1m9-9h1M3 12H2m15.364 6.364l.707.707M6.343 6.343l-.707-.707m12.728 0l.707-.707M6.343 17.657l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z"
+            />
+          </svg>
         </button>
-        <button id="logout-btn" class="btn logout-btn">Logout</button>
+
+        <button
+          id="premium-btn"
+          class="bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-medium px-3 py-1.5 rounded-lg shadow hover:scale-105 transition-all"
+        >
+          Premium
+        </button>
+
+        <button
+          id="logout-btn"
+          class="bg-red-500 text-white font-medium px-3 py-1.5 rounded-lg shadow hover:bg-red-600 transition-all"
+        >
+          Logout
+        </button>
       </div>
     </header>
-    <div class="container">
-      <h1>Expense & Income Dashboard</h1>
 
-      <!-- Only for all users -->
-      <button id="downloadBtn" class="disabled" disabled>
-        Download Expenses
-      </button>
-      <div id="downloadResult" class="download-result"></div>
+    <!-- ===== Main Section ===== -->
+    <main
+      class="flex flex-col lg:flex-row justify-center items-start gap-8 px-4 py-10 w-full max-w-7xl mx-auto"
+    >
+      <!-- ===== Dashboard (Left Side) ===== -->
+      <section
+        class="flex-1 w-full bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 rounded-2xl shadow-lg p-6 space-y-6"
+      >
+        <h2 class="text-center text-xl md:text-2xl font-semibold">
+          Expense Dashboard
+        </h2>
 
-      <button id="toggleDashboardBtn" class="disabled" disabled>
-        Show Expense Dashboard
-      </button>
+        <div class="space-y-3">
+          <button
+            id="downloadBtn"
+            disabled
+            class="w-full bg-indigo-400/70 dark:bg-indigo-600/50 cursor-not-allowed text-white py-2 rounded-lg"
+          >
+            Download Expenses
+          </button>
 
-      <!-- Full dashboard -->
-      <div id="full-dashboard" style="display: none">
-        <!-- Filters -->
-        <div class="filters">
-          <label for="filter">View:</label>
-          <select id="filter">
-            <option value="all">All</option>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
+          <div
+            id="downloadResult"
+            class="text-center text-sm text-gray-600 dark:text-gray-300"
+          ></div>
+
+          <button
+            id="toggleDashboardBtn"
+            disabled
+            class="w-full bg-indigo-400/70 dark:bg-indigo-600/50 cursor-not-allowed text-white py-2 rounded-lg"
+          >
+            Show Expense Dashboard
+          </button>
         </div>
 
-        <!-- Summary -->
-        <div class="summary">
-          <div class="card">
-            <h3>Total Expense</h3>
-            <p id="totalExpense">₹0</p>
+        <!-- Full Dashboard -->
+        <div id="full-dashboard" class="hidden space-y-5">
+          <div class="filters text-right">
+            <label for="filter" class="font-semibold mr-2">View:</label>
+            <select
+              id="filter"
+              class="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-1 bg-white/50 dark:bg-gray-800/60 focus:ring-2 focus:ring-indigo-400"
+            >
+              <option value="all">All</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+
+          <div class="summary flex justify-center">
+            <div
+              class="flex-1 text-center bg-white/60 dark:bg-gray-800/60 rounded-xl shadow p-4"
+            >
+              <h3 class="text-gray-600 dark:text-gray-300 mb-1">
+                Total Expense
+              </h3>
+              <p id="totalExpense" class="text-xl font-bold">₹0</p>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-center">
+              <thead class="bg-indigo-500 text-white">
+                <tr>
+                  <th class="py-2 px-4">Date</th>
+                  <th class="py-2 px-4">Description</th>
+                  <th class="py-2 px-4">Category</th>
+                  <th class="py-2 px-4">Type</th>
+                  <th class="py-2 px-4">Amount</th>
+                </tr>
+              </thead>
+              <tbody
+                id="transactionBody"
+                class="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm"
+              ></tbody>
+            </table>
+          </div>
+
+          <div
+            id="pagination"
+            class="flex justify-center items-center gap-3 pt-2 text-sm"
+          >
+            <button
+              id="prevPage"
+              class="px-3 py-1 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all"
+            >
+              Previous
+            </button>
+            <span id="pageInfo">Page 1 of 1</span>
+            <button
+              id="nextPage"
+              class="px-3 py-1 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-all"
+            >
+              Next
+            </button>
+          </div>
+
+          <div class="flex justify-end gap-2 text-sm">
+            <label for="pageSize">Per page:</label>
+            <select
+              id="pageSize"
+              class="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-1 bg-white/50 dark:bg-gray-800/60"
+            >
+              <option value="2">2</option>
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+            </select>
           </div>
         </div>
+      </section>
 
-        <!-- Table Section -->
-        <table id="transactionTable">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Description</th>
-              <th>Category</th>
-              <th>Type</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody id="transactionBody"></tbody>
-        </table>
-        <div id="pagination" class="pagination">
-          <button id="prevPage">Previous</button>
-          <span id="pageInfo">Page 1 of 1</span>
-          <button id="nextPage">Next</button>
-        </div>
-        <div class="pagination-controls">
-          <label for="pageSize">Expenses per page:</label>
-          <select id="pageSize">
-            <option value="2">2</option>
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <main>
-      <section class="expense-container">
-        <div class="expense-form">
-          <h2>Add Expense</h2>
-          <form id="expense-form">
+      <!-- ===== Add Expense (Right Side) ===== -->
+      <section
+        class="flex-1 w-full bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl border border-white/20 rounded-2xl shadow-lg p-8 space-y-6"
+      >
+        <div>
+          <h2 class="text-center text-xl font-semibold mb-4">Add Expenses</h2>
+          <form id="expense-form" class="space-y-3">
             <input
-              type="number"
               id="amount"
+              type="number"
               placeholder="Amount"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 bg-white/50 dark:bg-gray-800/60 focus:ring-2 focus:ring-indigo-400"
               required
-            /><br />
+            />
             <input
-              type="text"
               id="description"
+              type="text"
               placeholder="Description"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 bg-white/50 dark:bg-gray-800/60 focus:ring-2 focus:ring-indigo-400"
               required
-            /><br />
-            <select id="category">
-              <option value="" disabled selected>
-                Select Category(Optional)
-              </option>
+            />
+            <select
+              id="category"
+              class="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 bg-white/50 dark:bg-gray-800/60 focus:ring-2 focus:ring-indigo-400"
+              required
+            >
+              <option value="" disabled selected>Select Category</option>
               <option value="Food">Food</option>
               <option value="Travel">Travel</option>
               <option value="Shopping">Shopping</option>
@@ -115,29 +247,87 @@
               <option value="Education">Education</option>
               <option value="Other">Other</option>
             </select>
-            <br />
-            <button type="submit">Add Expense</button>
+
+            <button
+              type="submit"
+              class="w-full bg-gradient-to-r from-indigo-500 to-blue-500 text-white font-semibold py-2 rounded-lg hover:opacity-90 transition-all"
+            >
+              Add Expense
+            </button>
           </form>
+          <button
+            id="addExpenseAI"
+            class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded w-full mt-2"
+          >
+            💡 Add Expense using AI
+          </button>
         </div>
 
-        <div class="expense-list">
-          <h3>Your Expenses</h3>
-          <ul id="expense-list"></ul>
+        <div>
+          <h3 class="text-center text-lg font-medium mb-3">Your Expenses</h3>
+          <ul id="expense-list" class="space-y-2"></ul>
         </div>
 
-        <button id="leaderboard-btn" style="display: none">
+        <button
+          id="leaderboard-btn"
+          class="hidden w-full bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-semibold rounded-lg px-6 py-2 hover:scale-105 transition-all"
+        >
           Show Leaderboard
         </button>
-        <div id="leaderboard-container" style="display: none">
-          <h3>Leaderboard</h3>
-          <ul id="leaderboard-list"></ul>
+
+        <div
+          id="leaderboard-container"
+          class="hidden mt-5 border border-white/40 bg-white/40 dark:bg-gray-800/40 backdrop-blur-md rounded-xl p-5 max-w-md mx-auto"
+        >
+          <h3 class="text-lg font-semibold mb-3">Leaderboard</h3>
+          <ul id="leaderboard-list" class="space-y-1 text-sm"></ul>
+
+          <!-- Rows per page selector -->
+          <div class="flex justify-end gap-2 text-sm mt-2">
+            <label for="leaderboardPageSize">Per page:</label>
+            <select
+              id="leaderboardPageSize"
+              class="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-1 bg-white/50 dark:bg-gray-800/60"
+            >
+              <option value="2">2</option>
+              <option value="5" selected>5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div
+            id="leaderboard-pagination"
+            class="flex justify-center items-center gap-2 mt-3"
+          >
+            <button
+              id="prevLeaderboardPage"
+              class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 disabled:bg-indigo-300"
+            >
+              Prev
+            </button>
+            <span
+              id="leaderboardPageInfo"
+              class="text-gray-700 dark:text-gray-200"
+            ></span>
+            <button
+              id="nextLeaderboardPage"
+              class="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 disabled:bg-indigo-300"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </section>
     </main>
 
-    <!-- Cashfree JS SDK v3 -->
+    <!-- ===== Scripts ===== -->
     <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="./js/expense.js"></script>
+
+    <!-- ✅ Theme Toggle Script -->
+    <script></script>
   </body>
 </html>

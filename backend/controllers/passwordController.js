@@ -1,13 +1,12 @@
 // controllers/passwordController.js
 const SibApiV3Sdk = require("sib-api-v3-sdk");
-const { v4: uuidv4 } = require("uuid");
+
 const bcrypt = require("bcrypt");
 const User = require("../models/userModel");
 const ForgotPasswordRequest = require("../models/forgetPassword");
 require("dotenv").config();
 
 const base_url = "http://localhost:5000";
-
 
 // ------------------ Create Forgot Password Request & Send Email ------------------
 const forgotPassword = async (req, res) => {
